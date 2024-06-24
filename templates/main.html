@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Console</title>
+    <!-- CodeMirror CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.css">
+    <!-- CodeMirror JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/python/python.min.js"></script>
+    <!-- Skulpt JavaScript -->
+    <script src="https://unpkg.com/skulpt@latest/dist/skulpt.min.js"></script>
+    <script src="https://unpkg.com/skulpt@latest/dist/skulpt-stdlib.js"></script>
+    <style>
+        /* Styling for the layout */
+        body, html {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            display: flex;
+            height: 100%;
+        }
+        .editor-container, .output-container {
+            flex: 1;
+            height: 50%;
+            overflow-y:scroll;
+            box-sizing: border-box;
+            border-bottom: 2px solid;
+        }
+        .output-container {
+            border-left: 2px solid #ccc;
+        }
+        .output pre {
+            white-space: pre-wrap;
+            margin: 0;
+            padding: 10px;
+        }
+        .button-container {
+            text-align: end;
+            padding: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="editor-container">
+            <textarea id="code" name="code">
+print("Hello, World!")
+            </textarea>
+            <div class="button-container">
+                <button onclick="runCode()">Check</button>
+            </div>
+        </div>
+        <div class="output-container">
+            <pre id="output"></pre>
+        </div>
+    </div>
+    <div class="container">
+        <textarea id="code" placeholder="Enter your Python code here..."></textarea>
+        <button onclick="analyzeCode()">Analyze Complexity</button>
+        <div id="output"></div>
+    </div>
+
+    <script>
+        // Initialize CodeMirror editor
+        var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
+            lineNumbers: true,
+            mode: "python"
+        });
+
+        // Function to output Skulpt results to the web page
+        function outf(text) { 
+            var mypre = document.getElementById("output"); 
+            mypre.innerHTML = mypre.innerHTML + text; 
+        }
+
+        // Function to run the code
+        function runCode() {
+            var prog = editor.getValue();
+            document.getElementById("output").innerHTML = ""; // Clear previous output
+            Sk.configure({ output: outf });
+            Sk.pre = "output";
+            Sk.misceval.asyncToPromise(function() {
+                return Sk.importMainWithBody("<stdin>", false, prog, true);
+            }).catch(function(err) {
+                outf(err.toString());
+            });
+        }
+        async function analyzeCode() {
+            const code = document.getElementById("code").value.trim();
+            const response = await fetch('/analyze_complexity', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ code })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                document.getElementById("output").textContent = data.result;
+            } else {
+                const errorMessage = await response.text();
+                document.getElementById("output").textContent = `Error: ${errorMessage}`;
+            }
+        }
+    </script>
+</body>
+</html>
