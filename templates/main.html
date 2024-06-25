@@ -95,7 +95,7 @@ print("Hello, World!")
         }
         async function analyzeCode() {
             const code = document.getElementById("code").value.trim();
-            const response = await fetch('/analyze_complexity', {
+            const response = await fetch('/analyze', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
